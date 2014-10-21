@@ -1,3 +1,6 @@
+Python Kinesis Consumer
+=======================
+
 A simple tool for consuming kinesis streams in python. Uses sqlalchemy to store last records per shard.  
 
 
