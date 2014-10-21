@@ -4,13 +4,16 @@ from boto.kinesis.layer1 import KinesisConnection
 from . import models
 
 class Consumer(object):
-    def __init__(self, stream, shard_id, session, limit=None):
+    def __init__(self, stream, shard_id, session, connection=None, limit=None):
         self.stream   = stream
         self.shard_id = shard_id
         self.limit    = limit
         self.session  = session
 
-        self.connection = KinesisConnection()
+        if connection is None:
+            self.connection = KinesisConnection()
+        else:
+            self.connection = connection
 
         self.shard = self.session.query(models.KinesisShard).filter(
             models.KinesisShard.stream==self.stream,
