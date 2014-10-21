@@ -1,5 +1,5 @@
 import time
-from boto import kinesis
+from boto.kinesis.layer1 import KinesisConnection
 
 from . import models
 
@@ -10,40 +10,54 @@ class Consumer(object):
         self.limit    = limit
         self.session  = session
 
-        self.connection = kinesis.layer1.KinesisConnection()
+        self.connection = KinesisConnection()
 
         self.shard = self.session.query(models.KinesisShard).filter(
-            stream=self.stream,
-            shard_id=self.shard_id
+            models.KinesisShard.stream==self.stream,
+            models.KinesisShard.shard_id==self.shard_id
         ).first()
 
+        if not self.shard:
+            self.shard = models.KinesisShard(
+                stream=self.stream,
+                shard_id=self.shard_id
+            )
+
     def get_current_record(self):
-        if self.stream.last_record:
-            return stream.last_record
+        if self.shard.last_record:
+            return self.shard.last_record
 
         return None
 
     def save_current_record(self, current_record):
-        self.stream.last_record = current_record
-        self.session.add(self.stream)
+        self.shard.last_record = current_record
+        self.session.add(self.shard)
         self.session.commit()
 
     def process(self, sleep=True):
         stream_desc = self.connection.describe_stream(self.stream)
-        shard = desc['StreamDescription']['Shards'][0]
 
-        last_record = self.get_last_record()
+        shard_dict = {
+            shard['ShardId']: shard
+            for shard in stream_desc['StreamDescription']['Shards']
+        }
+
+        shard = shard_dict[self.shard_id]
+
+        last_record = self.get_current_record()
         if last_record is None:
             last_record = shard['SequenceNumberRange']['StartingSequenceNumber']
             shard_iterator_result = self.connection.get_shard_iterator(
                 self.stream,
                 self.shard_id,
-                'AT_SEQUENCE_NUMBER')
+                'AT_SEQUENCE_NUMBER',
+                last_record)
         else:
              shard_iterator_result = self.connection.get_shard_iterator(
                 self.stream,
                 self.shard_id,
-                'AFTER_SEQUENCE_NUMBER')
+                'AFTER_SEQUENCE_NUMBER',
+                last_record)
 
         shard_iterator = shard_iterator_result['ShardIterator']
 
@@ -52,14 +66,13 @@ class Consumer(object):
         while True:
             records_result = self.connection.get_records(shard_iterator)
 
-            records = get_records['Records']
+            records = records_result['Records']
 
             for record in records:
-                processing = self.process_record(record)
+                processing = self.process_record(record['Data'])
 
                 if processing:
-                    self.save_current_record(record)
-                    pass
+                    self.save_current_record(record['SequenceNumber'])
                 else:
                     break
 
