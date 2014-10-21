@@ -2,8 +2,8 @@ from sqlalchemy import create_engine, Column, Integer, String
 
 Base = declarative_base()
 
-class KinesisStream(Base):
-    __tablename__ = 'kinesis_stream'
+class KinesisShard(Base):
+    __tablename__ = 'kinesis_shard'
 
     id          = Column(Integer, primary_key=True)
     stream      = Column(String)

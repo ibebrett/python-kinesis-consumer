@@ -12,19 +12,21 @@ class Consumer(object):
 
         self.connection = kinesis.layer1.KinesisConnection()
 
-    def get_current_record(self):
-        stream = self.session.query(models.KinesisStream).filter(
+        self.shard = self.session.query(models.KinesisShard).filter(
             stream=self.stream,
             shard_id=self.shard_id
         ).first()
 
-        if stream:
+    def get_current_record(self):
+        if self.stream.last_record:
             return stream.last_record
 
         return None
 
     def save_current_record(self, current_record):
-        pass
+        self.stream.last_record = current_record
+        self.session.add(self.stream)
+        self.session.commit()
 
     def process(self, sleep=True):
         stream_desc = self.connection.describe_stream(self.stream)
@@ -45,15 +47,30 @@ class Consumer(object):
 
         shard_iterator = shard_iterator_result['ShardIterator']
 
-        for _ in xrange(self.limit):
+        times = 0
+        processing = True
+        while True:
             records_result = self.connection.get_records(shard_iterator)
 
             records = get_records['Records']
 
             for record in records:
-                pass
+                processing = self.process_record(record)
+
+                if processing:
+                    self.save_current_record(record)
+                    pass
+                else:
+                    break
 
             shard_iterator = records_result['NextShardIterator']
 
+            times += 1
+            if not processing or (self.limit and times > self.limit):
+                break
+
             if sleep:
                 time.sleep(1)
+
+    def self.process_record(self, record):
+        return True
