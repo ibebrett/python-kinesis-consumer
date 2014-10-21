@@ -72,5 +72,5 @@ class Consumer(object):
             if sleep:
                 time.sleep(1)
 
-    def self.process_record(self, record):
+    def process_record(self, record):
         return True
