@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, Boolean, String
+from sqlalchemy import create_engine, Column, Integer, String
 
 Base = declarative_base()
 
