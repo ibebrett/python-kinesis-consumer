@@ -1,4 +1,6 @@
-from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy import  Column, Integer, String
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 
 Base = declarative_base()
 
@@ -15,11 +17,3 @@ Session = sessionmaker()
 def create(engine):
     Base.metadata.create_all(engine)
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--create', action='store_true')
-
-    args = parser.parse_args()
-
-    if args.create:
-        create()
