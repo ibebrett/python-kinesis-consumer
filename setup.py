@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='Python Kinesis Consumer',
-    version='0.1',
+    version='0.3',
     description='System for processing kinesis streams for python',
     author='Brett Jurman',
     author_email='i.be.brett@gmail.com',
